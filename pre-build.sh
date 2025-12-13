@@ -7,4 +7,5 @@ sed -i 's/^CONFIG_RT2880_MTD_PHYSMAP_LEN=.*/CONFIG_RT2880_MTD_PHYSMAP_LEN=0x8000
 
 sed -i 's/^SRC_VER.*/SRC_VER = 72.3/' padavan-ng/trunk/user/nfqws/Makefile
 cd padavan-ng/trunk/user/nfqws
-find . -maxdepth 1 -maxdepth 1 -not -name Makefile -not -name patches -print0 | xargs -0 rm -rf --
+find . -maxdepth 1 -mindepth 1 -not -name Makefile -not -name patches -print0 | xargs -0 rm -rf --
+#find . -maxdepth 1 -maxdepth 1 -not -name Makefile -not -name patches -print0 | xargs -0 rm -rf --
