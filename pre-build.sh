@@ -1,20 +1,12 @@
-# 1. Получаем хеш последнего коммита (например, a1b2c3d)
-SHA=$(curl -sH "User-Agent: Firefox" https://api.github.com | jq -r '.sha' | cut -c1-7)
+# 1. Получаем хэш последнего коммита (7 символов) через GitHub API
+LAST_HASH=$(curl -s https://api.github.com | grep sha | head -n 1 | cut -d '"' -f 4 | cut -c1-7)
 
-# Если GitHub API не ответил, используем заглушку 'latest', чтобы не было пустоты
-[ -z "$SHA" ] && SHA="latest"
+# 2. Подставляем хэш в переменную SRC_VER (вместо фиксированного числа)
+sed -i "s/^SRC_VER.*/SRC_VER = $LAST_HASH/" padavan-ng/trunk/user/nfqws/Makefile
 
-# 2. Устанавливаем версию в Makefile (будет выглядеть как SRC_VER = 72.a1b2c3d)
-sed -i "s/^SRC_VER.*/SRC_VER = 72.$SHA/" padavan-ng/trunk/user/nfqws/Makefile
+# 3. Убираем из URL привязку к тегам 'refs/tags/v', чтобы GitHub отдавал архив по хэшу
+sed -i 's|archive/refs/tags/v|archive/|g' padavan-ng/trunk/user/nfqws/Makefile
 
-# 3. Переходим в папку и чистим старье
+# 4. Ваш оригинальный блок очистки
 cd padavan-ng/trunk/user/nfqws
 find . -maxdepth 1 -mindepth 1 -not -name Makefile -not -name patches -print0 | xargs -0 rm -rf --
-
-# 4. Скачиваем текущий master и называем его так, как ждет Makefile
-# ВАЖНО: Мы скачиваем архив ветки master и сохраняем под именем с хешем
-curl -LSsH "User-Agent: Firefox" "https://github.com" -o "zapret-72.$SHA.tar.gz"
-
-# 5. Распаковываем в нужную папку, чтобы patch не ругался на отсутствие директории
-mkdir -p "zapret-72.$SHA"
-tar -xzf "zapret-72.$SHA.tar.gz" -C "zapret-72.$SHA" --strip-components=1
