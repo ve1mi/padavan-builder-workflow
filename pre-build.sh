@@ -1,17 +1,20 @@
-# 1. Получаем дату последнего коммита для версии
-LATEST_DATE=$(curl -s https://api.github.com | jq -r '.commit.committer.date' | cut -d'T' -f1 | tr -d '-')
-LATEST_VER="72.$LATEST_DATE"
+# 1. Получаем хеш последнего коммита (например, a1b2c3d)
+SHA=$(curl -sH "User-Agent: Firefox" https://api.github.com | jq -r '.sha' | cut -c1-7)
 
-# 2. Путь к папке nfqws
-PKG_DIR="padavan-ng/trunk/user/nfqws"
+# Если GitHub API не ответил, используем заглушку 'latest', чтобы не было пустоты
+[ -z "$SHA" ] && SHA="latest"
 
-# 3. Обновляем версию в Makefile
-sed -i "s/^SRC_VER.*/SRC_VER = $LATEST_VER/" "$PKG_DIR/Makefile"
+# 2. Устанавливаем версию в Makefile (будет выглядеть как SRC_VER = 72.a1b2c3d)
+sed -i "s/^SRC_VER.*/SRC_VER = 72.$SHA/" padavan-ng/trunk/user/nfqws/Makefile
 
-# 4. Очищаем папку от старых файлов (кроме Makefile и патчей)
-cd "$PKG_DIR"
+# 3. Переходим в папку и чистим старье
+cd padavan-ng/trunk/user/nfqws
 find . -maxdepth 1 -mindepth 1 -not -name Makefile -not -name patches -print0 | xargs -0 rm -rf --
 
-# 5. СКАЧИВАЕМ АКТУАЛЬНЫЙ MASTER И ПОДМЕНЯЕМ ИМ РЕЛИЗ
-# Мы скачиваем текущий срез кода и называем его так, как ждет Makefile
-curl -L "https://github.com/bol-van/zapret/archive/refs/heads/master.tar.gz" -o "zapret-$LATEST_VER.tar.gz"
+# 4. Скачиваем текущий master и называем его так, как ждет Makefile
+# ВАЖНО: Мы скачиваем архив ветки master и сохраняем под именем с хешем
+curl -LSsH "User-Agent: Firefox" "https://github.com" -o "zapret-72.$SHA.tar.gz"
+
+# 5. Распаковываем в нужную папку, чтобы patch не ругался на отсутствие директории
+mkdir -p "zapret-72.$SHA"
+tar -xzf "zapret-72.$SHA.tar.gz" -C "zapret-72.$SHA" --strip-components=1
